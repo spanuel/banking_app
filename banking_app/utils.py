@@ -1,6 +1,73 @@
-import hashlib
-from datetime import datetime
+import logging
+import time
 import random
+from datetime import datetime, timedelta
+
+logging.basicConfig(filename="data/error_log.txt", level=logging.ERROR, format='%(asctime)s %(message)s')
+
+def validate_id_number(id_number, dob):
+    return id_number[:6] == dob[2:].replace("-", "")
+
+def generate_password():
+    return ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', k=12))
+
+def generate_account_number():
+    first_digit = '6'
+    unique_part = str(random.randint(10, 99))
+    random_part = ''.join(random.choices('0123456789', k=7))
+    return first_digit + unique_part + random_part
+
+def log_transaction(username, description, amount, balance):
+    with open("data/TransactionLog.txt", 'a') as file:
+        file.write(f"{datetime.now().strftime('%Y-%m-%d')},{username},{description},{amount},{balance}\n")
+
+def log_error(username, error_message):
+    logging.error(f"{username} - {error_message}")
+
+def update_balance(username, new_balance):
+    lines = []
+    found = False
+    with open("data/BankData.txt", 'r') as file:
+        lines = file.readlines()
+    
+    with open("data/BankData.txt", 'w') as file:
+        for line in lines:
+            user_details = line.strip().split(',')
+            if user_details[5] == username:
+                user_details[8] = str(new_balance)
+                found = True
+            file.write(','.join(user_details) + '\n')
+    
+    if not found:
+        log_error(username, "User not found when updating balance")
+
+def get_balance(username):
+    with open("data/BankData.txt", 'r') as file:
+        for line in file:
+            user_details = line.strip().split(',')
+            if user_details[5] == username:
+                return float(user_details[8])
+    log_error(username, "User not found when fetching balance")
+    return 0.0
+
+def get_user_transactions(username, months):
+    transactions = []
+    cutoff_date = datetime.now() - timedelta(days=30 * months)
+    with open("data/TransactionLog.txt", 'r') as file:
+        for line in file:
+            date, user, description, amount, balance = line.strip().split(',')
+            if user == username and datetime.strptime(date, '%Y-%m-%d') >= cutoff_date:
+                transactions.append({
+                    "date": date,
+                    "description": description,
+                    "money_in": amount if description in ["Deposit", "Transfer Received"] else "",
+                    "money_out": amount if description in ["Withdraw", "Transfer", "Transfer Declined", "Withdraw Declined"] else "",
+                    "balance": balance
+                })
+    return transactions
+
+def generate_delay():
+    time.sleep(random.randint(60, 120))  # Delay for 1-2 minutes
 
 def center_window(root, width, height):
     screen_width = root.winfo_screenwidth()
@@ -8,82 +75,3 @@ def center_window(root, width, height):
     x = (screen_width // 2) - (width // 2)
     y = (screen_height // 2) - (height // 2)
     root.geometry(f'{width}x{height}+{x}+{y}')
-
-def generate_password(length=8):
-    characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_+="
-    password = "".join(random.choice(characters) for i in range(length))
-    return password
-
-def validate_id_number(id_number, dob):
-    dob_parts = dob.split('-')
-    dob_str = ''.join(dob_parts)
-    return id_number.startswith(dob_str)
-
-def generate_account_number():
-    return str(random.randint(10000000, 99999999))
-
-def save_user(full_name, dob, id_number, email, phone, username, password, account_number):
-    password_hash = hashlib.sha256(password.encode()).hexdigest()
-    with open("data/BankData.txt", "a") as file:
-        file.write(f"{full_name},{dob},{id_number},{email},{phone},{username},{password_hash},{account_number}\n")
-
-def log_transaction(username, description, money_in, money_out, balance):
-    with open("data/TransactionLog.txt", "a") as file:
-        file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')},{username},{description},{money_in},{money_out},{balance}\n")
-
-def log_error(error, username=None):
-    with open("data/ErrorLog.txt", "a") as file:
-        file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')},{username if username else 'N/A'},{error}\n")
-
-def get_user_balance(username):
-    with open("data/BankData.txt", "r") as file:
-        for line in file:
-            data = line.strip().split(',')
-            if data[5] == username:
-                return float(data[7])
-    return 0
-
-def update_user_balance(username, new_balance):
-    users = []
-    with open("data/BankData.txt", "r") as file:
-        users = file.readlines()
-    with open("data/BankData.txt", "w") as file:
-        for user in users:
-            data = user.strip().split(',')
-            if data[5] == username:
-                data[7] = str(new_balance)
-                file.write(','.join(data) + '\n')
-            else:
-                file.write(user)
-
-def get_user_transactions(username):
-    transactions = []
-    with open("data/TransactionLog.txt", "r") as file:
-        for line in file:
-            data = line.strip().split(',')
-            if data[1] == username:
-                transactions.append({
-                    'date': data[0],
-                    'username': data[1],
-                    'description': data[2],
-                    'money_in': float(data[3]),
-                    'money_out': float(data[4]),
-                    'balance': float(data[5])
-                })
-    return transactions
-
-def get_user_details(username):
-    with open("data/BankData.txt", "r") as file:
-        for line in file:
-            data = line.strip().split(',')
-            if data[5] == username:
-                return {
-                    'full_name': data[0],
-                    'dob': data[1],
-                    'id_number': data[2],
-                    'email': data[3],
-                    'phone': data[4],
-                    'username': data[5],
-                    'account_number': data[7]
-                }
-    return None

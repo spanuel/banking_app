@@ -1,74 +1,99 @@
-import tkinter as tk
+import datetime
+from tkinter import messagebox, Toplevel, simpledialog
 import ttkbootstrap as ttk
-from tkinter import messagebox
-from ttkbootstrap.constants import *
-from banking_app.utils import center_window, generate_password, validate_id_number, generate_account_number, save_user, log_error
+from ttkbootstrap import DateEntry
+from banking_app.utils import update_balance, validate_id_number, generate_password, generate_account_number
 from banking_app.email_utils import send_email
 
-def create_open_account_screen(root, navigate):
-    root.geometry("600x650")
-    center_window(root, 600, 650)
-    for widget in root.winfo_children():
-        widget.destroy()
+def create_registration_screen(root, navigate):
+    registration_window = Toplevel(root)
+    registration_window.title("Register")
 
-    frame = ttk.Frame(root, padding="20")
-    frame.pack(expand=True, fill='both')
+    frame = ttk.Frame(registration_window)
+    frame.pack(pady=20)
 
-    label = ttk.Label(frame, text="Open Account", font=('Helvetica', 20, 'bold'))
-    label.pack(pady=10)
+    details = [
+        "Full Name", "Date of Birth", "ID Number", "Email Address", "Phone Number", "Username", "Password", "Confirm Password"
+    ]
 
-    fields = ["Full Name", "Date of Birth", "ID Number", "Email Address", "Phone Number", "Username", "Password"]
     entries = {}
+    for detail in details:
+        ttk.Label(frame, text=detail + ":").pack(pady=5)
+        if detail == "Date of Birth":
+            entry = DateEntry(frame)
+        else:
+            entry = ttk.Entry(frame)
+            entry.insert(0, f"Enter your {detail.lower()}")  # Adding placeholders
+            if detail == "Password" or detail == "Confirm Password":
+                entry.config(show="*")
+        entry.pack(pady=5)
+        entries[detail] = entry
 
-    for field in fields:
-        frame_inner = ttk.Frame(frame)
-        frame_inner.pack(fill='x', pady=5)
-        label = ttk.Label(frame_inner, text=field)
-        label.pack(side='left', padx=5)
-        entry = ttk.Entry(frame_inner)
-        entry.pack(side='left', fill='x', expand=True)
-        entries[field] = entry
+    def check_fields_filled():
+        if all(entry.get() for entry in entries.values()):
+            register_button.config(state='normal')
+        else:
+            register_button.config(state='disabled')
 
-    def generate_password_click():
-        password = generate_password()
-        entries["Password"].delete(0, tk.END)
-        entries["Password"].insert(0, password)
+    for entry in entries.values():
+        entry.bind("<KeyRelease>", lambda event: check_fields_filled())
 
-    generate_password_button = ttk.Button(frame, text="Generate Password", style="TButton", command=generate_password_click)
-    generate_password_button.pack(pady=10)
 
-    def open_account_click():
-        try:
-            full_name = entries["Full Name"].get()
-            dob = entries["Date of Birth"].get()
-            id_number = entries["ID Number"].get()
-            email = entries["Email Address"].get()
-            phone = entries["Phone Number"].get()
-            username = entries["Username"].get()
-            password = entries["Password"].get()
 
-            if not validate_id_number(id_number, dob):
-                messagebox.showerror("Error", "Invalid ID Number or Date of Birth.")
-                return
+    def handle_registration():
+        user_details = {detail: entry.get() for detail, entry in entries.items()}
+        if not validate_id_number(user_details["ID Number"], user_details["Date of Birth"]):
+            messagebox.showerror("Error", "ID number and date of birth do not match")
+            return
 
-            account_number = generate_account_number()
-            save_user(full_name, dob, id_number, email, phone, username, password, account_number)
-            
-            account_details = (
-                f"Dear {full_name},\n\n"
-                f"Thank you for registering with our bank. Your account details are as follows:\n\n"
-                f"Account Number: {account_number}\n"
-                f"Password: {password}\n\n"
-                f"Please keep your account details secure and do not share them with anyone.\n\n"
-                f"Best regards,\nYour Bank"
-            )
-            send_email(email, "Account Created Successfully", account_details)
+        if int(user_details["Date of Birth"][:4]) > (datetime.datetime.now().year - 16):
+            messagebox.showerror("Error", "User must be at least 16 years old to register")
+            return
 
-            messagebox.showinfo("Success", "Account created successfully!")
-            navigate(root)
-        except Exception as e:
-            log_error(str(e), username)
-            messagebox.showerror("Error", "An error occurred while creating the account.")
+        if user_details["Password"] != user_details["Confirm Password"]:
+            messagebox.showerror("Error", "Passwords do not match")
+            return
 
-    open_account_button = ttk.Button(frame, text="Open Account", style="TButton", command=open_account_click)
-    open_account_button.pack(pady=20)
+        account_number = generate_account_number()
+        if len(user_details["Password"]) < 5:
+            messagebox.showerror("Error", "Password must be at least 5 characters")
+            return
+
+        password = user_details["Password"] if user_details["Password"] else generate_password()
+        from banking_app.auth import save_user
+        save_user(user_details["Full Name"], user_details["Date of Birth"], user_details["ID Number"], user_details["Email Address"], user_details["Phone Number"], user_details["Username"], password, account_number)
+
+        email_body = f"""Welcome to Tech Junkies Bank\nDear {'Mr' if int(user_details['ID Number'][6:10]) >= 5000 else 'Ms'} {user_details["Full Name"]},
+                        \nCongratulations and welcome to Tech Junkies Bank!We're excited to have you as a new customer.
+                        \nYour new savings account has been opened successfully. Please find your new account details below:
+                        \nAccount name:{user_details['Full Name']}
+                        \nAccount Number: {account_number}
+                        \nPassword: {password}
+                        \nYou can use this account number to set up direct deposit, transfer funds, make payments, and more.
+                        \nThank you for choosing Tech Junkies Bank. We look forward to serving your financial needs. 
+                        \nPlease let us know if you have any other questions.
+                        \n\nSincerely,
+                        \nThe Tech Junkies Bank Team
+                    """
+        send_email(user_details["Email Address"], "Welcome to Our Bank", email_body)
+        messagebox.showinfo("Success", "Registration successful! Your bank account details have been sent to your email.")
+        
+        response = messagebox.askyesno("Deposit Funds", "Would you like to deposit funds to your account?")
+        if response:
+            amount = simpledialog.askfloat("Deposit Amount", "Enter the amount to deposit:")
+            if amount:
+                # Logic to update account balance with deposited amount
+                 update_balance(account_number, amount)
+            pass
+
+        registration_window.destroy()
+        navigate("ui_account_management")
+
+    check_fields_filled()  # Initial check
+
+    register_button = ttk.Button(frame, text="Register", command=handle_registration)
+    register_button.pack(pady=10)
+    register_button.config(state='disabled')
+
+    check_fields_filled()  # Initial check
+

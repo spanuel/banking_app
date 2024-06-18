@@ -30,8 +30,8 @@ def create_main_screen(root, navigate):
     signin_button = ttk.Button(button_frame, text="Sign In", command=lambda: navigate(create_signin_screen), style="TButton")
     signin_button.pack(side=LEFT, padx=10)
     
-    from banking_app.ui_registration import create_open_account_screen
-    open_account_button = ttk.Button(button_frame, text="Open an Account", command=lambda: navigate(create_open_account_screen), style="TButton")
+    from banking_app.ui_registration import create_registration_screen
+    open_account_button = ttk.Button(button_frame, text="Open an Account", command=lambda: navigate(create_registration_screen), style="TButton")
     open_account_button.pack(side=LEFT, padx=10)
 
 # Main Application Window

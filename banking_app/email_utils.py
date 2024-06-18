@@ -1,22 +1,19 @@
 import smtplib
 from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from banking_app.utils import log_error
 
-def send_email(recipient, subject, body):
+def send_email(to_address, subject, body):
     try:
-        sender_email = "v.spanuel3@gmail.com"
-        sender_password = "PHOKAmofokeng"
+        from_address = "v.spanuel3@gmail.com"
+        password = "prjj duhg irfn inls"
 
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = recipient
+        msg = MIMEText(body)
         msg['Subject'] = subject
+        msg['From'] = from_address
+        msg['To'] = to_address
 
-        msg.attach(MIMEText(body, 'plain'))
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, recipient, msg.as_string())
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(from_address, password)
+            server.sendmail(from_address, to_address, msg.as_string())
     except Exception as e:
-        log_error(str(e))
+        log_error(to_address, str(e))
