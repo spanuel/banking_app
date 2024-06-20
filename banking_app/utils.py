@@ -6,7 +6,20 @@ from datetime import datetime, timedelta
 logging.basicConfig(filename="data/error_log.txt", level=logging.ERROR, format='%(asctime)s %(message)s')
 
 def validate_id_number(id_number, dob):
-    return id_number[:6] == dob[2:].replace("-", "")
+    if len(id_number)!= 13 or not id_number.isdigit():
+        return False
+
+    id_dob = id_number[:6]
+    id_year = int(id_dob[:2]) + 1900
+    id_month = int(id_dob[2:4])
+    id_day = int(id_dob[4:])
+
+    dob_parts = dob.split('/')
+    dob_month = int(dob_parts[0])
+    dob_day = int(dob_parts[1])
+    dob_year = int(dob_parts[2])
+
+    return id_year == dob_year and id_month == dob_month and id_day == dob_day
 
 def generate_password():
     return ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', k=12))

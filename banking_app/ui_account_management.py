@@ -1,21 +1,27 @@
-from tkinter import simpledialog,  Toplevel
+from tkinter import simpledialog,  Toplevel, messagebox
 import ttkbootstrap as ttk
 from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement
-from banking_app.utils import get_user_transactions
 
-def create_account_management_screen(root, username):
+
+def create_account_management_screen(root, username, navigate, create_signin_screen):
     frame = ttk.Frame(root)
     frame.pack(pady=20)
 
     def handle_deposit():
         amount = simpledialog.askfloat("Deposit", "Enter amount to deposit:")
         if amount is not None:
-            deposit_funds(username, amount)
+            try:
+                deposit_funds(username, amount)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid amount")
 
     def handle_withdraw():
         amount = simpledialog.askfloat("Withdraw", "Enter amount to withdraw:")
         if amount is not None:
-            withdraw_funds(username, amount)
+            try:
+                withdraw_funds(username, amount)
+            except ValueError:
+                messagebox.showerror("Error", "Invalid amount")
 
     def handle_transfer():
         transfer_window = Toplevel(root)
@@ -31,9 +37,15 @@ def create_account_management_screen(root, username):
 
         def execute_transfer():
             recipient = recipient_entry.get()
-            amount = float(amount_entry.get())
-            transfer_funds(username, recipient, amount)
-            transfer_window.destroy()
+            try:
+                amount = float(amount_entry.get())
+                if amount <= 0:
+                    messagebox.showerror("Error", "Amount must be positive")
+                else:
+                    transfer_funds(username, recipient, amount)
+                    transfer_window.destroy()
+            except ValueError:
+                messagebox.showerror("Error", "Invalid amount")
 
         transfer_button = ttk.Button(transfer_window, text="Transfer", command=execute_transfer)
         transfer_button.pack(pady=10)
@@ -44,9 +56,9 @@ def create_account_management_screen(root, username):
             generate_statement(username, months)
 
     def handle_logout():
-        from banking_app.ui_login import create_signin_screen
+        navigate(lambda root, navigate: create_signin_screen(root, navigate), root, navigate)
         frame.destroy()
-        create_signin_screen(root)
+        frame.destroy()
 
     ttk.Button(frame, text="Deposit", command=handle_deposit).pack(pady=10)
     ttk.Button(frame, text="Withdraw", command=handle_withdraw).pack(pady=10)

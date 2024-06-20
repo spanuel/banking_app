@@ -1,10 +1,63 @@
 import datetime
-from tkinter import messagebox, simpledialog
 import ttkbootstrap as ttk
 from ttkbootstrap import DateEntry
-from banking_app.utils import center_window, update_balance, validate_id_number, generate_password, generate_account_number
+from tkinter import BooleanVar, messagebox, simpledialog
+from ttkbootstrap.constants import *
+from banking_app.utils import center_window,update_balance, validate_id_number, generate_password, generate_account_number
 from banking_app.email_utils import send_email
-from main import navigate_to
+from banking_app.auth import login_user
+from banking_app.ui_account_management import create_account_management_screen
+from banking_app.navigator import navigate_to
+
+def toggle_password(password_entry, toggle_var):
+    if toggle_var.get():
+        password_entry.config(show='')
+    else:
+        password_entry.config(show='*')
+
+def create_signin_screen(root, navigate):
+    root.geometry("600x400")
+    center_window(root, 600, 400)
+    for widget in root.winfo_children():
+        widget.destroy()
+    
+    frame = ttk.Frame(root, padding="20")
+    frame.pack(expand=True, fill='both')
+    
+    top_frame = ttk.Frame(frame, padding="10", style="primary.TFrame")
+    top_frame.pack(fill='x')
+    greeting = ttk.Label(top_frame, text="Hello", font=('Helvetica', 30, 'bold'), style="primary.Inverse.TLabel")
+    greeting.pack(pady=10)
+    
+    username_label = ttk.Label(frame, text="Username:")
+    username_label.pack(pady=5)
+    username_entry = ttk.Entry(frame)
+    username_entry.pack(pady=5)
+    
+    password_label = ttk.Label(frame, text="Password:")
+    password_label.pack(pady=5)
+    password_entry = ttk.Entry(frame, show="*")
+    password_entry.pack(pady=5)
+    
+    toggle_var = BooleanVar()
+    show_password_check = ttk.Checkbutton(frame, text="Show Password", variable=toggle_var, command=lambda: toggle_password(password_entry, toggle_var))
+    show_password_check.pack(pady=5)
+    
+    def on_signin():
+        try:
+            if login_user(username_entry.get(), password_entry.get()):
+                create_account_management_screen(root, username_entry.get(), create_signin_screen, navigate)
+            else:
+                messagebox.showerror("Login Failed", "Invalid username or password.")
+        except Exception as e:
+            
+            messagebox.showerror("Error", "An error occurred. Please try again.")
+    
+    signin_button = ttk.Button(frame, text="Sign In", style="TButton", command=on_signin)
+    signin_button.pack(pady=10)
+    
+    forgot_password_button = ttk.Button(frame, text="Forgot Password?", style="TButton")
+    forgot_password_button.pack()
 
 
 def create_registration_screen(root, navigate):
@@ -90,7 +143,7 @@ def create_registration_screen(root, navigate):
                         # Logic to update account balance with deposited amount
                         update_balance(account_number, amount)
                         messagebox.showinfo("Success", f"Deposit of R {amount} successful!")
-                        navigate(create_account_management_screen, root, navigate)
+                        navigate(create_account_management_screen, root)
                     else:
                         messagebox.showerror("Error", "Invalid amount")
                 else:
