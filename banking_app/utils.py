@@ -1,10 +1,12 @@
 import logging
+import string
 import time
 import random
 from datetime import datetime, timedelta
 
 logging.basicConfig(filename="data/error_log.txt", level=logging.ERROR, format='%(asctime)s %(message)s')
 
+#validating id number
 def validate_id_number(id_number, dob):
     if len(id_number)!= 13 or not id_number.isdigit():
         return False
@@ -21,22 +23,29 @@ def validate_id_number(id_number, dob):
 
     return id_year == dob_year and id_month == dob_month and id_day == dob_day
 
-def generate_password():
-    return ''.join(random.choices('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', k=12))
+#generating password
+def generate_password(length=12):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    password = ''.join(random.choice(characters) for _ in range(length))
+    return password
 
+#generating account number
 def generate_account_number():
     first_digit = '6'
     unique_part = str(random.randint(10, 99))
     random_part = ''.join(random.choices('0123456789', k=7))
     return first_digit + unique_part + random_part
 
+#log all transactions to file
 def log_transaction(username, description, amount, balance):
     with open("data/TransactionLog.txt", 'a') as file:
         file.write(f"{datetime.now().strftime('%Y-%m-%d')},{username},{description},{amount},{balance}\n")
 
+#log all errors to file
 def log_error(username, error_message):
     logging.error(f"{username} - {error_message}")
 
+#updating user's account balance
 def update_balance(username, new_balance):
     lines = []
     found = False
@@ -54,6 +63,7 @@ def update_balance(username, new_balance):
     if not found:
         log_error(username, "User not found when updating balance")
 
+#getting balance
 def get_balance(username):
     with open("data/BankData.txt", 'r') as file:
         for line in file:
@@ -63,6 +73,7 @@ def get_balance(username):
     log_error(username, "User not found when fetching balance")
     return 0.0
 
+#getting all user transactions
 def get_user_transactions(username, months):
     transactions = []
     cutoff_date = datetime.now() - timedelta(days=30 * months)

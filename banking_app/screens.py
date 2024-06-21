@@ -16,8 +16,8 @@ def toggle_password(password_entry, toggle_var):
         password_entry.config(show='*')
 
 def create_signin_screen(root, navigate):
-    root.geometry("600x400")
-    center_window(root, 600, 400)
+    root.geometry("600x500")
+    center_window(root, 600, 500)
     for widget in root.winfo_children():
         widget.destroy()
     
@@ -46,7 +46,7 @@ def create_signin_screen(root, navigate):
     def on_signin():
         try:
             if login_user(username_entry.get(), password_entry.get()):
-                create_account_management_screen(root, username_entry.get(), create_signin_screen, navigate)
+                navigate_to(create_account_management_screen, root, username_entry.get(), navigate_to, create_signin_screen)
             else:
                 messagebox.showerror("Login Failed", "Invalid username or password.")
         except Exception as e:
@@ -60,9 +60,9 @@ def create_signin_screen(root, navigate):
     forgot_password_button.pack()
 
 
-def create_registration_screen(root, navigate):
-    root.geometry("400x700")
-    center_window(root, 400, 700)
+def create_registration_screen(root, navigate,create_signin_screen):
+    root.geometry("500x750")
+    center_window(root, 500, 750)
     for widget in root.winfo_children():
         widget.destroy()
     root.title("Register")
@@ -135,26 +135,32 @@ def create_registration_screen(root, navigate):
         
             response = messagebox.askyesno("Deposit Funds", "Would you like to deposit funds to your account?")
             if response:
-                password = simpledialog.askstring("Enter Password", "Enter your password", parent=root)
-                if password == user_details["Password"]:
-                    amount = simpledialog.askfloat("Enter Amount", "Enter the amount to deposit", parent=root)
-                    if amount:
-                        from banking_app.ui_account_management import create_account_management_screen
-                        # Logic to update account balance with deposited amount
-                        update_balance(account_number, amount)
-                        messagebox.showinfo("Success", f"Deposit of R {amount} successful!")
-                        navigate(create_account_management_screen, root)
+                while True:
+                    password = simpledialog.askstring("Enter Password", "Enter your password", parent=root, show="*")
+                    if password == user_details["Password"]:
+                        amount = simpledialog.askfloat("Enter Amount", "Enter the amount to deposit", parent=root)
+                        if amount:
+                            from banking_app.ui_account_management import create_account_management_screen
+                            # Logic to update account balance with deposited amount
+                            update_balance(account_number, amount)
+                            messagebox.showinfo("Success", f"Deposit of R {amount} successful!")
+                            # Navigate to the account management screen
+                            navigate_to(create_account_management_screen, root, user_details["Username"], navigate, create_signin_screen)
+                            break
+                        else:
+                            messagebox.showerror("Error", "Invalid amount")
                     else:
-                        messagebox.showerror("Error", "Invalid amount")
-                else:
-                    messagebox.showerror("Error", "Incorrect password")
-                navigate(navigate,"login")
+                        messagebox.showerror("Error", "Incorrect password. Please try again.")
+            else:
+                # Navigate to the signin screen
+                navigate_to(create_signin_screen, root, navigate)
+
         except Exception as e:
             messagebox.showerror("Error", str(e))
             
 
-        root.destroy()
-        navigate(create_account_management_screen, root, navigate)
+        #root.destroy()
+        #create_registration_screen(root, navigate_to, create_signin_screen)
 
     register_button = ttk.Button(frame, text="Register", command=lambda: handle_registration(root, {}), style="TButton")
     register_button.pack(pady=10)

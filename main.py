@@ -4,6 +4,7 @@ from ttkbootstrap.constants import *
 from banking_app.utils import center_window
 from banking_app.navigator import navigate_to
 from banking_app.screens import create_signin_screen, create_registration_screen
+from banking_app.ui_account_management import create_account_management_screen
 
 def create_main_screen(root, navigate,create_signin_screen, create_registration_screen):
     root.geometry("600x300")
@@ -25,10 +26,10 @@ def create_main_screen(root, navigate,create_signin_screen, create_registration_
     button_frame = ttk.Frame(frame)
     button_frame.pack(pady=20)
     
-    signin_button = ttk.Button(button_frame, text="Sign In", command=lambda: navigate(create_signin_screen, root), style="TButton")
+    signin_button = ttk.Button(button_frame, text="Sign In", command=lambda: navigate(create_signin_screen, root,navigate_to), style="TButton")
     signin_button.pack(side=LEFT, padx=10)
     
-    open_account_button = ttk.Button(button_frame, text="Open an Account", command=lambda: navigate(create_registration_screen, root), style="TButton")
+    open_account_button = ttk.Button(button_frame, text="Open an Account", command=lambda: navigate(create_registration_screen, root, navigate_to, create_signin_screen), style="TButton")
     open_account_button.pack(side=LEFT, padx=10)
 
     

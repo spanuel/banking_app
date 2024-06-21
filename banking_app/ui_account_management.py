@@ -1,11 +1,27 @@
 from tkinter import simpledialog,  Toplevel, messagebox
 import ttkbootstrap as ttk
-from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement
+from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement,get_balance
 
 
 def create_account_management_screen(root, username, navigate, create_signin_screen):
-    frame = ttk.Frame(root)
-    frame.pack(pady=20)
+    root.title("Account Management") 
+    for widget in root.winfo_children():
+        widget.destroy()
+
+    frame = ttk.Frame(root, padding="20")
+    frame.pack(expand=True, fill='both')
+
+    top_frame = ttk.Frame(frame, padding="10", style="primary.TFrame")
+    top_frame.pack(fill='x')
+
+    greeting = ttk.Label(top_frame, text=f"Hello {username}", font=('Helvetica', 30, 'bold'), style="primary.Inverse.TLabel")
+    greeting.pack(pady=10)
+
+    # Get the user's balance from the file BankData
+    balance = get_balance(username)  # You need to implement the get_balance function
+
+    balance_label = ttk.Label(frame, text=f"Balance: R {balance}", font=('Helvetica', 20, 'bold'))
+    balance_label.pack(pady=10)
 
     def handle_deposit():
         amount = simpledialog.askfloat("Deposit", "Enter amount to deposit:")
