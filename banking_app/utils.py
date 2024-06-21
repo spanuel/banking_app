@@ -1,3 +1,4 @@
+import json
 import logging
 import string
 import time
@@ -5,6 +6,9 @@ import random
 from datetime import datetime, timedelta
 
 logging.basicConfig(filename="data/error_log.txt", level=logging.ERROR, format='%(asctime)s %(message)s')
+
+USERS_FILE = "data/BankData.txt"
+TRANSACTIONS_FILE = "data/TransactionLog.txt"
 
 #validating id number
 def validate_id_number(id_number, dob):
@@ -49,45 +53,52 @@ def log_error(username, error_message):
 def update_balance(username, new_balance):
     lines = []
     found = False
-    with open("data/BankData.txt", 'r') as file:
+    with open(USERS_FILE, 'r') as file:
         lines = file.readlines()
     
-    with open("data/BankData.txt", 'w') as file:
+    with open(USERS_FILE, 'w') as file:
         for line in lines:
-            user_details = line.strip().split(',')
-            if user_details[5] == username:
-                user_details[8] = str(new_balance)
+            user_details = eval(line.strip())
+            if user_details["Username"] == username:
+                user_details["Balance"] = new_balance
                 found = True
-            file.write(','.join(user_details) + '\n')
+            file.write(str(user_details) + '\n')
     
     if not found:
         log_error(username, "User not found when updating balance")
 
+#get user account number
+def get_account_number(username):
+    with open(USERS_FILE, 'r') as file:
+        for line in file:
+            user_details = eval(line.strip())
+            if user_details["Username"] == username:
+                return user_details["Account Number"]
+    return None
+
 #getting balance
 def get_balance(username):
-    with open("data/BankData.txt", 'r') as file:
+    with open(USERS_FILE, 'r') as file:
         for line in file:
-            user_details = line.strip().split(',')
-            if user_details[5] == username:
-                return float(user_details[8])
-    log_error(username, "User not found when fetching balance")
-    return 0.0
+            user_details = eval(line.strip())
+            if user_details["Username"] == username:
+                return float(user_details["Balance"])
+    return None
 
 #getting all user transactions
 def get_user_transactions(username, months):
     transactions = []
-    cutoff_date = datetime.now() - timedelta(days=30 * months)
-    with open("data/TransactionLog.txt", 'r') as file:
+    with open(TRANSACTIONS_FILE, 'r') as file:
         for line in file:
-            date, user, description, amount, balance = line.strip().split(',')
-            if user == username and datetime.strptime(date, '%Y-%m-%d') >= cutoff_date:
-                transactions.append({
-                    "date": date,
-                    "description": description,
-                    "money_in": amount if description in ["Deposit", "Transfer Received"] else "",
-                    "money_out": amount if description in ["Withdraw", "Transfer", "Transfer Declined", "Withdraw Declined"] else "",
-                    "balance": balance
-                })
+            try:
+                transaction = json.loads(line.strip())
+                if transaction["username"] == username:
+                    transaction_date = datetime.strptime(transaction["date"], '%Y-%m-%d')
+                    if transaction_date >= datetime.now() - timedelta(days=months*30):
+                        transaction["account_number"] = get_account_number(username)
+                        transactions.append(transaction)
+            except json.JSONDecodeError:
+                log_error(username, "Invalid transaction format")
     return transactions
 
 def generate_delay():

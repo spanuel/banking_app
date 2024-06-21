@@ -64,7 +64,7 @@ def generate_statement(username, months):
             f"Print Date: {datetime.now().strftime('%Y-%m-%d')}\n\n"
             f"Personal Details\n"
             f"{username}\n"
-            f"Account Number: {transactions[0]['account_number']}\n\n"
+            f"Account Number: {transactions[0]['Account Number']}\n\n"
             f"Transaction Date\tDescription\tMoney In (R)\tMoney Out (R)\tBalance (R)\n"
         )
         statement_body = "\n".join([f"{t['date']}\t{t['description']}\t{t['money_in']}\t{t['money_out']}\t{t['balance']}" for t in transactions])

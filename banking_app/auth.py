@@ -8,8 +8,8 @@ def login_user(username, password):
         with open(USERS_FILE, 'r') as file:
             users = file.readlines()
             for user in users:
-                user_details = user.strip().split(',')
-                if user_details[5] == username and bcrypt.checkpw(password.encode(), user_details[6].encode()):
+                user_details = eval(user.strip())
+                if user_details["Username"] == username and bcrypt.checkpw(password.encode(), user_details["Password"].encode()):
                     return True
         return False
     except Exception as e:
@@ -19,7 +19,18 @@ def login_user(username, password):
 def save_user(full_name, dob, id_number, email, phone, username, password, account_number):
     try:
         hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        user_details = {
+            "Full Name": full_name,
+            "Date of Birth": dob,
+            "ID Number": id_number,
+            "Email Address": email,
+            "Phone Number": phone,
+            "Username": username,
+            "Password": hashed_password,
+            "Account Number": account_number,
+            "Balance": 0.0  # Initialize balance to 0.0
+        }
         with open(USERS_FILE, 'a') as file:
-            file.write(f"{full_name},{dob},{id_number},{email},{phone},{username},{hashed_password},{account_number}\n")
+            file.write(str(user_details) + '\n')
     except Exception as e:
         log_error(username, str(e))
