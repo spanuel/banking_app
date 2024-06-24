@@ -15,6 +15,7 @@ def toggle_password(password_entry, toggle_var):
     else:
         password_entry.config(show='*')
 
+# Login user interface
 def create_signin_screen(root, navigate):
     root.geometry("600x500")
     center_window(root, 600, 500)
@@ -60,6 +61,7 @@ def create_signin_screen(root, navigate):
     forgot_password_button.pack()
 
 
+# Registration user interface
 def create_registration_screen(root, navigate,create_signin_screen):
     root.geometry("600x800")
     center_window(root, 600, 800)

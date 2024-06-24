@@ -6,6 +6,8 @@ from banking_app.navigator import navigate_to
 from banking_app.screens import create_signin_screen, create_registration_screen
 from banking_app.ui_account_management import create_account_management_screen
 
+
+# Main user interface
 def create_main_screen(root, navigate,create_signin_screen, create_registration_screen):
     root.geometry("600x300")
     center_window(root, 600, 300)

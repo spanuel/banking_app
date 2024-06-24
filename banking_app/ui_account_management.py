@@ -2,7 +2,7 @@ from tkinter import simpledialog,  Toplevel, messagebox
 import ttkbootstrap as ttk
 from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement,get_balance,update_balance
 
-
+# Acoount management user interface
 def create_account_management_screen(root, username, navigate, create_signin_screen):
     root.title("Account Management") 
     for widget in root.winfo_children():
@@ -18,11 +18,12 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
     greeting.pack(pady=10)
 
     # Get the user's balance from the file BankData
-    balance = get_balance(username)  # You need to implement the get_balance function
+    balance = get_balance(username) 
 
     balance_label = ttk.Label(frame, text=f"Balance: R {balance}", font=('Helvetica', 20, 'bold'))
     balance_label.pack(pady=10)
 
+    # Doing deposit transactions
     def handle_deposit():
         amount = simpledialog.askfloat("Deposit", "Enter amount to deposit:")
         if amount is not None:
@@ -32,6 +33,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
             except ValueError:
                 messagebox.showerror("Error", "Invalid amount")
 
+    # Doing withdrawal transactions
     def handle_withdraw():
         amount = simpledialog.askfloat("Withdraw", "Enter amount to withdraw:")
         if amount is not None:
@@ -41,6 +43,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
             except ValueError:
                 messagebox.showerror("Error", "Invalid amount")
 
+    # Doing transfer transactions
     def handle_transfer():
         transfer_window = Toplevel(root)
         transfer_window.title("Transfer")
@@ -68,6 +71,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         transfer_button = ttk.Button(transfer_window, text="Transfer", command=execute_transfer)
         transfer_button.pack(pady=10)
 
+    # Printing statement
     def handle_print_statement():
         months = simpledialog.askinteger("Statement", "Enter number of months (1-3):")
         if months in [1, 2, 3]:
@@ -75,6 +79,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         else:
             messagebox.showinfo("Error", "Invalid input. Maximum number of months allowed is 3.")
 
+    # logout
     def handle_logout():
         navigate(lambda root, navigate: create_signin_screen(root, navigate), root, navigate)
         frame.destroy()
