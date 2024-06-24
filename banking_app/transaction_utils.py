@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from banking_app.email_utils import send_email
-from banking_app.utils import get_user_transactions, log_transaction, log_error, update_balance, get_balance, generate_delay
+from banking_app.utils import get_account_number, get_user_email,get_user_transactions, log_transaction, log_error, update_balance, get_balance, generate_delay
 
 TRANSACTION_LOG = "data/TransactionLog.txt"
 
@@ -56,6 +56,8 @@ def transfer_funds(username, recipient, amount, immediate=False):
 def generate_statement(username, months):
     try:
         transactions = get_user_transactions(username, months)
+        email = get_user_email(username)
+        account_number = get_account_number(username)
         statement_header = (
             f"Tech Junkies Bank\n\n"
             f"Bank Statement\n"
@@ -64,10 +66,17 @@ def generate_statement(username, months):
             f"Print Date: {datetime.now().strftime('%Y-%m-%d')}\n\n"
             f"Personal Details\n"
             f"{username}\n"
-            f"Account Number: {transactions[0]['Account Number']}\n\n"
-            f"Transaction Date\tDescription\tMoney In (R)\tMoney Out (R)\tBalance (R)\n"
+            f"Account Number: {account_number}\n\n"
+            f"{'Date':<26}{'Description':<30}{'Money In (R)':>20} {'Money Out (R)':>20} {'Balance (R)':>15}\n"
+            f"{'-' * 80}\n"
         )
-        statement_body = "\n".join([f"{t['date']}\t{t['description']}\t{t['money_in']}\t{t['money_out']}\t{t['balance']}" for t in transactions])
-        send_email(username, "Your Bank Statement", statement_header + statement_body)
+        statement_body = "\n".join(
+            [
+                f"{t['date']:<20}{t['description']:<35}{t['money_in']:>23.2f} {t['money_out']:>15.2f} {t['balance']:>15.2f}"
+                for t in transactions
+            ]
+        )
+        statement_footer = f"\n{'-' * 80}\n"
+        send_email(email, "Your Bank Statement", statement_header + statement_body + statement_footer)
     except Exception as e:
         log_error(username, str(e))

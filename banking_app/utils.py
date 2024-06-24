@@ -42,8 +42,16 @@ def generate_account_number():
 
 #log all transactions to file
 def log_transaction(username, description, amount, balance):
+    transaction = {
+        "date": datetime.now().strftime('%Y-%m-%d'),
+        "username": username,
+        "description": description,
+        "amount": amount,
+        "type": "deposit" if description == "Deposit" else "withdrawal" if description == "Withdraw" else "transfer",
+        "balance": balance
+    }
     with open("data/TransactionLog.txt", 'a') as file:
-        file.write(f"{datetime.now().strftime('%Y-%m-%d')},{username},{description},{amount},{balance}\n")
+        file.write(json.dumps(transaction) + "\n")
 
 #log all errors to file
 def log_error(username, error_message):
@@ -66,6 +74,15 @@ def update_balance(username, new_balance):
     
     if not found:
         log_error(username, "User not found when updating balance")
+
+#get user email
+def get_user_email(username):
+    with open(USERS_FILE, 'r') as file:
+        for line in file:
+            user_details = eval(line.strip())
+            if user_details["Username"] == username:
+                return user_details["Email Address"]
+    return None
 
 #get user account number
 def get_account_number(username):
@@ -96,6 +113,30 @@ def get_user_transactions(username, months):
                     transaction_date = datetime.strptime(transaction["date"], '%Y-%m-%d')
                     if transaction_date >= datetime.now() - timedelta(days=months*30):
                         transaction["account_number"] = get_account_number(username)
+                        if transaction["type"] == 'deposit':
+                            transaction["money_in"] = transaction["amount"]
+                            transaction["money_out"] = 0
+                        elif transaction["type"] == 'withdrawal':
+                            transaction["money_in"] = 0
+                            transaction["money_out"] = transaction["amount"]
+                        elif transaction["type"] == 'transfer':
+                            transaction["money_in"] = 0
+                            transaction["money_out"] = transaction["amount"]
+                        # Calculate the balance
+                        if transactions:
+                            if transaction["type"] == 'transfer':
+                                # Assuming the transfer is from the current account
+                                previous_balance = transactions[-1]["balance"]
+                                transaction["balance"] = previous_balance - transaction["amount"]
+                            else:
+                                previous_balance = transactions[-1]["balance"]
+                                transaction["balance"] = previous_balance + transaction["money_in"] - transaction["money_out"]
+                        else:
+                            if transaction["type"] == 'transfer':
+                                # Assuming the initial balance is 0
+                                transaction["balance"] = -transaction["amount"]
+                            else:
+                                transaction["balance"] = transaction["money_in"] - transaction["money_out"]
                         transactions.append(transaction)
             except json.JSONDecodeError:
                 log_error(username, "Invalid transaction format")

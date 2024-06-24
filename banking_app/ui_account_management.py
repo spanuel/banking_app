@@ -1,6 +1,6 @@
 from tkinter import simpledialog,  Toplevel, messagebox
 import ttkbootstrap as ttk
-from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement,get_balance
+from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement,get_balance,update_balance
 
 
 def create_account_management_screen(root, username, navigate, create_signin_screen):
@@ -28,6 +28,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         if amount is not None:
             try:
                 deposit_funds(username, amount)
+                update_balance(username, get_balance(username) + amount)
             except ValueError:
                 messagebox.showerror("Error", "Invalid amount")
 
@@ -36,6 +37,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         if amount is not None:
             try:
                 withdraw_funds(username, amount)
+                update_balance(username, get_balance(username) + amount)
             except ValueError:
                 messagebox.showerror("Error", "Invalid amount")
 
@@ -70,6 +72,8 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         months = simpledialog.askinteger("Statement", "Enter number of months (1-3):")
         if months in [1, 2, 3]:
             generate_statement(username, months)
+        else:
+            messagebox.showinfo("Error", "Invalid input. Maximum number of months allowed is 3.")
 
     def handle_logout():
         navigate(lambda root, navigate: create_signin_screen(root, navigate), root, navigate)
