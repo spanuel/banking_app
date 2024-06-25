@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 from banking_app.email_utils import send_email
 from banking_app.utils import get_account_number, get_user_email,get_user_transactions, log_transaction, log_error, update_balance, get_balance, generate_delay
 
@@ -30,28 +31,37 @@ def withdraw_funds(username, amount):
         log_error(username, str(e))
         return False
 
-def transfer_funds(username, recipient, amount, immediate=False):
+def transfer_funds(username, recipient_identifier, amount, immediate=False):
     try:
-        balance = get_balance(username)
-        if balance >= amount:
-            if immediate:
-                charge = 10
-            else:
-                charge = 4.5
-                generate_delay()
+        sender_balance = get_balance(username)
+        if sender_balance is None:
+            raise ValueError(f"Could not retrieve balance for sender {username}")
 
-            new_balance = balance - amount - charge
-            update_balance(username, new_balance)
-            update_balance(recipient, get_balance(recipient) + amount)
-            log_transaction(username, "Transfer", amount, new_balance)
-            log_transaction(recipient, "Transfer Received", amount, get_balance(recipient))
-            return True
+        if sender_balance >= amount:
+            # Proceed with the transfer
+            if immediate:
+                charge = 10  
+            else:
+                charge = 4.5  
+                generate_delay()  # transfer processing delay
+
+            # Deduct amount from sender's balance
+            new_sender_balance = sender_balance - amount - charge
+            update_balance(username, new_sender_balance)
+            log_transaction(username, "Transfer", amount, new_sender_balance)
+
+            # Log the transfer received by recipient (assuming the recipient exists)
+            update_balance(recipient_identifier, get_balance(recipient_identifier) + amount)
+            log_transaction(recipient_identifier, "Transfer Received", amount, get_balance(recipient_identifier))
+
+            return True  # Transfer successful
         else:
-            log_transaction(username, "Transfer Declined", 3, balance - 3)  # R3 charge for declined transaction
-            return False
+            log_transaction(username, "Transfer Declined", 3, sender_balance - 3)  # R3 charge for declined transaction
+            return False  # Insufficient funds for transfer
     except Exception as e:
         log_error(username, str(e))
-        return False
+        return False  # Transfer failed due to exception or error
+
 
 def generate_statement(username, months):
     try:

@@ -1,3 +1,5 @@
 2024-06-21 14:02:41,282 6120423182 - User not found when updating balance
 2024-06-24 08:48:49,904 6248033772 - User not found when updating balance
 2024-06-24 10:03:58,787 6351146191 - User not found when updating balance
+2024-06-25 09:05:22,646 6985566807 - User not found when updating balance
+2024-06-25 09:12:35,904 6839207961 - User not found when updating balance

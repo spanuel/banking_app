@@ -3,7 +3,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap import DateEntry
 from tkinter import BooleanVar, messagebox, simpledialog
 from ttkbootstrap.constants import *
-from banking_app.utils import center_window,update_balance, validate_id_number, generate_password, generate_account_number
+from banking_app.utils import center_window, load_beneficiaries,update_balance, validate_id_number, generate_password, generate_account_number
 from banking_app.email_utils import send_email
 from banking_app.auth import login_user
 from banking_app.ui_account_management import create_account_management_screen
@@ -149,7 +149,7 @@ def create_registration_screen(root, navigate,create_signin_screen):
                             if amount:
                                 from banking_app.ui_account_management import create_account_management_screen
                                 # Logic to update account balance with deposited amount
-                                update_balance(account_number, amount)
+                                update_balance(user_details["Username"], amount)
                                 messagebox.showinfo("Success", f"Deposit of R {amount} successful!")
                                 # Navigate to the account management screen
                                 navigate_to(create_account_management_screen, root, user_details["Username"], navigate, create_signin_screen)
