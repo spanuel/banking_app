@@ -1,7 +1,7 @@
-from tkinter import simpledialog, Toplevel, messagebox
+from tkinter import BooleanVar, simpledialog, Toplevel, messagebox
 import ttkbootstrap as ttk
 from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement, get_balance, update_balance
-from banking_app.utils import account_exists, add_beneficiary_to_username_list, create_beneficiary_file, get_account_number, load_beneficiaries, user_exists
+from banking_app.utils import account_exists, add_beneficiary_to_username_list, center_window,  get_account_number, load_beneficiaries, log_transaction, user_exists
 
 # Acoount management user interface
 def create_account_management_screen(root, username, navigate, create_signin_screen):
@@ -19,68 +19,100 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
     greeting.pack(pady=10)
 
     # Get the user's balance from the file BankData
-    balance = get_balance(username) 
+    def update_balance_display():
+        balance = get_balance(username)  # Fetch balance from data file
+        balance_label.config(text=f"Balance: R {balance}") 
 
+    # Define balance_label before calling update_balance_display
+    balance = get_balance(username)  # Fetch initial balance
     balance_label = ttk.Label(frame, text=f"Balance: R {balance}", font=('Helvetica', 20, 'bold'))
     balance_label.pack(pady=10)
+
+    # Call update_balance_display to update the balance label
+    update_balance_display()
 
     # Doing deposit transactions
     def handle_deposit():
         amount = simpledialog.askfloat("Deposit", "Enter amount to deposit:")
         if amount is not None:
-            try:
-                deposit_funds(username, amount)
-                update_balance(username, get_balance(username) + amount)
-                # Update balance display
-                balance_label.config(text=f"Balance: R {get_balance(username)}")
-            except ValueError:
-                messagebox.showerror("Error", "Invalid amount")
+            if deposit_funds(username, amount):
+                update_balance_display()
+                messagebox.showinfo("Success", "Deposit Successful")
+            else:
+                messagebox.showerror("Error", "Deposit Failed")
 
     # Doing withdrawal transactions
     def handle_withdraw():
-        amount = simpledialog.askfloat("Withdraw", "Enter amount to withdraw:")
+        amount = simpledialog.askfloat("Withdrawal", "Enter amount to withdraw:")
         if amount is not None:
-            try:
-                withdraw_funds(username, amount)
-                update_balance(username, get_balance(username) - amount)
-                # Update balance display
-                balance_label.config(text=f"Balance: R {get_balance(username)}")
-            except ValueError:
-                messagebox.showerror("Error", "Invalid amount")
+            if withdraw_funds(username, amount):
+                update_balance_display()
+                messagebox.showinfo("Success", "Withdrawal Successful")
+            else:
+                messagebox.showerror("Error", "Withdrawal Failed")
 
     # Doing transfer transactions
     def handle_transfer():
         beneficiaries = load_beneficiaries(username)
         if not beneficiaries:
-            # Create the file if it does not exist
-            create_beneficiary_file(username)  
-            beneficiaries = load_beneficiaries(username)
+            beneficiaries = []  # Initialize an empty list
 
         transfer_window = Toplevel(root)
         transfer_window.title("Transfer")
+        center_window(transfer_window, 400, 450)      
 
         balance = get_balance(username)
-        ttk.Label(transfer_window, text=f"Balance: R {balance}").pack(pady=5)
+        balance_label = ttk.Label(transfer_window, text=f"Balance: R {balance}", font=('Helvetica', 12, 'bold'))
+        balance_label.pack(pady=10, fill='x')
 
-        quick_pay_frame = ttk.Frame(transfer_window)
-        quick_pay_frame.pack(pady=5)
+        # Create a notebook with two tabs: Quick Pay and Beneficiaries
+        notebook = ttk.Notebook(transfer_window)
+        notebook.pack(pady=10, fill='both', expand=True)
 
-        ttk.Label(quick_pay_frame, text="Quick Pay").pack(side="left")
-        quick_pay_button = ttk.Button(quick_pay_frame, text="Pay with Cell Number", command=lambda: quick_pay_transfer(transfer_window, username))
-        quick_pay_button.pack(side="left", padx=10)
+        quick_pay_tab = ttk.Frame(notebook)
+        notebook.add(quick_pay_tab, text="Quick Pay")
 
-        add_beneficiary_frame = ttk.Frame(transfer_window)
-        add_beneficiary_frame.pack(pady=5)
+        beneficiaries_tab = ttk.Frame(notebook)
+        notebook.add(beneficiaries_tab, text="Beneficiaries")
 
-        ttk.Label(add_beneficiary_frame, text="Add Beneficiary").pack(side="left")
-        add_beneficiary_button = ttk.Button(add_beneficiary_frame, text="Add", command=lambda: add_beneficiary(transfer_window, username, beneficiary_list))
-        add_beneficiary_button.pack(side="left", padx=10)
+        # Quick Pay tab
+        ttk.Label(quick_pay_tab, text="Full Name:").pack(pady=5)
+        full_name_entry = ttk.Entry(quick_pay_tab)
+        full_name_entry.pack(pady=5)
 
-        beneficiary_list_frame = ttk.Frame(transfer_window)
-        beneficiary_list_frame.pack(pady=5)
+        ttk.Label(quick_pay_tab, text="Phone Number:").pack(pady=5)
+        cell_number_entry = ttk.Entry(quick_pay_tab)
+        cell_number_entry.pack(pady=5)
+
+        ttk.Label(quick_pay_tab, text="Amount:").pack(pady=5)
+        amount_entry = ttk.Entry(quick_pay_tab)
+        amount_entry.pack(pady=5)
+
+        def execute_quick_pay():
+            full_name = full_name_entry.get()
+            cell_number = cell_number_entry.get()
+            amount = float(amount_entry.get())
+            # Check if user exists
+            if user_exists(cell_number):
+                # Make quick pay transfer (immediate by default)
+                if transfer_funds(username, cell_number, amount, immediate=True):
+                    update_balance_display()
+                    transfer_window.destroy()
+                else:
+                    messagebox.showerror("Error", "Transfer Failed")
+            else:
+                messagebox.showerror("Error", "User does not exist, are you sure they have an account?")
+
+
+        quick_pay_button = ttk.Button(quick_pay_tab, text="Pay", command=execute_quick_pay)
+        quick_pay_button.pack(pady=10)
+
+        # Beneficiaries tab
+        beneficiary_list_frame = ttk.Frame(beneficiaries_tab)
+        beneficiary_list_frame.pack(pady=5, fill='both', expand=True)
 
         beneficiary_list = ttk.Treeview(beneficiary_list_frame, columns=("full_name",), show="headings")
-        beneficiary_list.heading("full_name", text="Full Name")
+        beneficiary_list.heading("full_name", text="My Beneficiaries")
         beneficiary_list.pack(side="left", fill="both", expand=True)
 
         # Load existing beneficiaries
@@ -90,44 +122,18 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
 
         def select_beneficiary():
             selected_beneficiary = beneficiary_list.item(beneficiary_list.selection()[0], "values")[0]
-            transfer_to_beneficiary(transfer_window, username, selected_beneficiary)
+            transfer_to_beneficiary(username, selected_beneficiary)
 
         select_button = ttk.Button(beneficiary_list_frame, text="Select", command=select_beneficiary)
         select_button.pack(side="right", padx=10)
 
-    def quick_pay_transfer(transfer_window, username):
-        quick_pay_window = Toplevel(transfer_window)
-        quick_pay_window.title("Quick Pay")
+        add_beneficiary_button = ttk.Button(beneficiaries_tab, text="Add Beneficiary", command=lambda: add_beneficiary(transfer_window, username, beneficiary_list))
+        add_beneficiary_button.pack(pady=10)
 
-        ttk.Label(quick_pay_window, text="Full Name:").pack(pady=5)
-        full_name_entry = ttk.Entry(quick_pay_window)
-        full_name_entry.pack(pady=5)
-
-        ttk.Label(quick_pay_window, text="Phone Number:").pack(pady=5)
-        cell_number_entry = ttk.Entry(quick_pay_window)
-        cell_number_entry.pack(pady=5)
-
-        ttk.Label(quick_pay_window, text="Amount:").pack(pady=5)
-        amount_entry = ttk.Entry(quick_pay_window)
-        amount_entry.pack(pady=5)
-
-        def execute_quick_pay():
-            full_name = full_name_entry.get()
-            cell_number = cell_number_entry.get()
-            amount = float(amount_entry.get())
-            # Check if user exists
-            if user_exists(cell_number):
-                # Make quick pay transfer
-                transfer_funds(username, cell_number, amount, immediate=True)
-                quick_pay_window.destroy()
-            else:
-                messagebox.showerror("Error", "User does not exist, are you sure they have an account")
-
-        quick_pay_button = ttk.Button(quick_pay_window, text="Pay", command=execute_quick_pay)
-        quick_pay_button.pack(pady=10)
 
     def add_beneficiary(transfer_window, username, beneficiary_list):
         add_beneficiary_window = Toplevel(transfer_window)
+        center_window(add_beneficiary_window, 350, 250)
         add_beneficiary_window.title("Add Beneficiary")
 
         ttk.Label(add_beneficiary_window, text="Full Name:").pack(pady=5)
@@ -145,17 +151,21 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
             if full_name and account_number:
                 # Check if account exists
                 if account_exists(account_number):
-                    # Add beneficiary to list
-                    add_beneficiary_to_username_list(username, full_name, account_number)
-                    add_beneficiary_window.destroy()
+                    # Check if beneficiary already exists
+                    if not any(beneficiary["Full Name"] == full_name and beneficiary["Account Number"] == account_number for beneficiary in load_beneficiaries(username)):
+                        # Add beneficiary to list
+                        add_beneficiary_to_username_list(username, full_name, account_number)
+                        add_beneficiary_window.destroy()
 
-                    # Update the Treeview widget
-                    beneficiary_list.delete(*beneficiary_list.get_children())
-                    updated_beneficiaries = load_beneficiaries(username)
-                    for beneficiary in updated_beneficiaries:
-                        beneficiary_list.insert("", "end", values=(beneficiary["Full Name"],))
+                        # Update the Treeview widget
+                        beneficiary_list.delete(*beneficiary_list.get_children())
+                        updated_beneficiaries = load_beneficiaries(username)
+                        for beneficiary in updated_beneficiaries:
+                            beneficiary_list.insert("", "end", values=(beneficiary["Full Name"],))
                         
-                    messagebox.showinfo("Success", "Beneficiary added successfully")
+                        messagebox.showinfo("Success", "Beneficiary added successfully")
+                    else:
+                        messagebox.showerror("Error", "Beneficiary already exists")
                 else:
                     messagebox.showerror("Error", "Account does not exist")
             else:
@@ -164,35 +174,45 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         add_button = ttk.Button(add_beneficiary_window, text="Add", command=add_beneficiary_to_list)
         add_button.pack(pady=10)
 
-    def transfer_to_beneficiary(transfer_window, username, beneficiary_full_name):
-        transfer_window.destroy()
-        transfer_window = Toplevel(transfer_window)
-        transfer_window.title("Transfer to Beneficiary")
+    def transfer_to_beneficiary(username,beneficiary_list):
+        selected_item = beneficiary_list.selection()[0]  # Get the selected item from Treeview
+        beneficiary_account_number = beneficiary_list.item(selected_item, "values")[1] 
 
-        ttk.Label(transfer_window, text=f"Full Name: {beneficiary_full_name}").pack(pady=5)
+        transfer_window = Toplevel(root)
+        transfer_window.title("Transfer to Beneficiary")
+        center_window(transfer_window, 400, 300)
+
+        ttk.Label(transfer_window, text=f"Full Name: {beneficiary_account_number}").pack(pady=5)  # Assuming account number is displayed
         ttk.Label(transfer_window, text="Account Number:").pack(pady=5)
-        account_number_label = ttk.Label(transfer_window, text=get_account_number(beneficiary_full_name))
+        account_number_label = ttk.Label(transfer_window, text=beneficiary_account_number)
         account_number_label.pack(pady=5)
 
         ttk.Label(transfer_window, text="Amount:").pack(pady=5)
         amount_entry = ttk.Entry(transfer_window)
         amount_entry.pack(pady=5)
 
+        immediate_payment_var = BooleanVar()
+        immediate_payment_checkbox = ttk.Checkbutton(transfer_window, text="Immediate Payment", variable=immediate_payment_var)
+        immediate_payment_checkbox.pack(pady=5)
+
         def execute_transfer():
             amount = float(amount_entry.get())
-            # Make transfer
-            transfer_funds(username, beneficiary_full_name, amount)
-            transfer_window.destroy()
+            immediate_payment = immediate_payment_var.get()
+
+            if get_balance(username) >= amount:
+                # Call do_transfer with retrieved account number
+                if transfer_funds(username, beneficiary_account_number, amount, immediate_payment):
+                    update_balance(username, get_balance(username) - amount - (10 if immediate_payment else 1.5))  # Update balance based on transfer type
+                    update_balance_display()
+                    transfer_window.destroy()
+                else:
+                    messagebox.showerror("Error", "Transfer Failed")  # Handle transfer failure from do_transfer
+            else:
+                log_transaction(username, "Transfer Declined", 3, get_balance(username))  # Log declined transaction
 
         transfer_button = ttk.Button(transfer_window, text="Transfer", command=execute_transfer)
         transfer_button.pack(pady=10)
 
-        immediate_payment_frame = ttk.Frame(transfer_window)
-        immediate_payment_frame.pack(pady=5)
-
-        ttk.Label(immediate_payment_frame, text="Immediate Payment").pack(side="left")
-        immediate_payment_button = ttk.Button(immediate_payment_frame, text="Pay", command=lambda: execute_transfer())
-        immediate_payment_button.pack(side="left", padx=10)
 
     deposit_button = ttk.Button(frame, text="Deposit", command=handle_deposit)
     deposit_button.pack(pady=5)
@@ -208,4 +228,6 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
 
     logout_button = ttk.Button(frame, text="Logout", command=create_signin_screen)
     logout_button.pack(pady=5)
+
+
 

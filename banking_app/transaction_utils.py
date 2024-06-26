@@ -8,7 +8,8 @@ TRANSACTION_LOG = "data/TransactionLog.txt"
 def deposit_funds(username, amount):
     try:
         balance = get_balance(username)
-        new_balance = balance + amount - 5  # R5 charge
+        new_amount = amount - 5  # Deduct the R5 charge
+        new_balance = balance + new_amount  # Add the deposited amount
         update_balance(username, new_balance)
         log_transaction(username, "Deposit", amount, new_balance)
         return True
@@ -20,12 +21,13 @@ def withdraw_funds(username, amount):
     try:
         balance = get_balance(username)
         if balance >= amount:
-            new_balance = balance - amount - 2  # R2 charge
-            update_balance(username, new_balance)
+            new_balance = balance - amount - 2 # R2 charge
+            update_balance(username, new_balance) 
             log_transaction(username, "Withdraw", amount, new_balance)
             return True
         else:
-            log_transaction(username, "Withdraw Declined", 3, balance - 3)  # R3 charge for declined transaction
+            log_transaction(username, "Withdraw Declined", 3, balance)  # R3 charge for declined transaction
+            update_balance(username, balance - 3)
             return False
     except Exception as e:
         log_error(username, str(e))
@@ -45,7 +47,7 @@ def transfer_funds(username, recipient_identifier, amount, immediate=False):
                 charge = 4.5  
                 generate_delay()  # transfer processing delay
 
-            # Deduct amount from sender's balance
+            # Deduct amount and charge from sender's balance
             new_sender_balance = sender_balance - amount - charge
             update_balance(username, new_sender_balance)
             log_transaction(username, "Transfer", amount, new_sender_balance)

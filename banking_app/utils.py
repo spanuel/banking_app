@@ -63,15 +63,15 @@ def update_balance(username, amount):
     found = False
     with open(USERS_FILE, 'r') as file:
         lines = file.readlines()
-    
+
     with open(USERS_FILE, 'w') as file:
         for line in lines:
             user_details = eval(line.strip())
             if user_details["Username"] == username:
-                user_details["Balance"] = float(user_details["Balance"]) + amount
+                user_details["Balance"] = float(amount)
                 found = True
             file.write(str(user_details) + '\n')
-    
+
     if not found:
         log_error(username, "User not found when updating balance")
 
@@ -84,7 +84,6 @@ def create_beneficiary_file(username):
 #load the existing list of beneficiaries
 def load_beneficiaries(username):
     filename = f"data/beneficiaries/beneficiaries_{username}.txt"
-    create_beneficiary_file(username)
     try:
         with open(filename, "r") as file:
             return [eval(line.strip()) for line in file.readlines()]
@@ -94,15 +93,22 @@ def load_beneficiaries(username):
 
 #this method will be called to save the updated list back to the file
 def save_beneficiaries(username, beneficiaries):
-    with open(f"data/beneficiaries/beneficiaries_{username}.txt", "w") as file:
-        for beneficiary in beneficiaries:
-            file.write(str(beneficiary) + "\n")
+    filename = f"data/beneficiaries/beneficiaries_{username}.txt"
+    try:
+        with open(filename, "w") as file:
+            for beneficiary in beneficiaries:
+                file.write(str(beneficiary) + "\n")
+        print(f"Beneficiaries saved to file: {beneficiaries}")
+    except Exception as e:
+        print(f"An error occurred while saving beneficiaries: {e}")
 
 #new beneficiary is added to the list
 def add_beneficiary_to_username_list(username, full_name, account_number):
+    print(f"Attempting to add beneficiary {full_name} with account number {account_number} for user {username}")
     beneficiaries = load_beneficiaries(username)
     for beneficiary in beneficiaries:
         if beneficiary["Full Name"] == full_name and beneficiary["Account Number"] == account_number:
+            print(f"Beneficiary already exists for user {username}")
             return  # Beneficiary already exists
     beneficiary = {
         "Username": username,
@@ -111,6 +117,7 @@ def add_beneficiary_to_username_list(username, full_name, account_number):
     }
     beneficiaries.append(beneficiary)
     save_beneficiaries(username, beneficiaries)
+    print(f"Beneficiary {full_name} added successfully")
 
 #checking if user cell number exists
 def user_exists(cell_number):
@@ -140,11 +147,12 @@ def get_user_email(username):
     return None
 
 #getting user account number
-def get_account_number(username):
+def get_account_number(full_name):
+    full_name = full_name.lower()
     with open(USERS_FILE, 'r') as file:
         for line in file:
             user_details = eval(line.strip())
-            if user_details["Username"] == username:
+            if user_details["Full Name"].lower() == full_name:
                 return user_details["Account Number"]
     return None
 
