@@ -97,6 +97,8 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
                 # Make quick pay transfer (immediate by default)
                 if transfer_funds(username, cell_number, amount, immediate=True):
                     update_balance_display()
+                    messagebox.showinfo()
+                    messagebox.showinfo("Success", "Withdrawal Successful")
                     transfer_window.destroy()
                 else:
                     messagebox.showerror("Error", "Transfer Failed")
@@ -111,7 +113,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         beneficiary_list_frame = ttk.Frame(beneficiaries_tab)
         beneficiary_list_frame.pack(pady=5, fill='both', expand=True)
 
-        beneficiary_list = ttk.Treeview(beneficiary_list_frame, columns=("full_name",), show="headings")
+        beneficiary_list = ttk.Treeview(beneficiary_list_frame, columns=("full_name"), show="headings")
         beneficiary_list.heading("full_name", text="My Beneficiaries")
         beneficiary_list.pack(side="left", fill="both", expand=True)
 
@@ -119,10 +121,13 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         beneficiaries = load_beneficiaries(username)
         for beneficiary in beneficiaries:
             beneficiary_list.insert("", "end", values=(beneficiary["Full Name"],))
+            print(beneficiary_list.get_children())
 
         def select_beneficiary():
-            selected_beneficiary = beneficiary_list.item(beneficiary_list.selection()[0], "values")[0]
-            transfer_to_beneficiary(username, selected_beneficiary)
+            print("Select beneficiary called")
+            selected_item = beneficiary_list.selection()[0]
+            selected_full_name = beneficiary_list.item(selected_item, "values")[0]
+            transfer_to_beneficiary(username, selected_full_name)
 
         select_button = ttk.Button(beneficiary_list_frame, text="Select", command=select_beneficiary)
         select_button.pack(side="right", padx=10)
@@ -132,6 +137,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
 
 
     def add_beneficiary(transfer_window, username, beneficiary_list):
+        print("Transfer to beneficiary called")
         add_beneficiary_window = Toplevel(transfer_window)
         center_window(add_beneficiary_window, 350, 250)
         add_beneficiary_window.title("Add Beneficiary")
@@ -174,17 +180,27 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         add_button = ttk.Button(add_beneficiary_window, text="Add", command=add_beneficiary_to_list)
         add_button.pack(pady=10)
 
-    def transfer_to_beneficiary(username,beneficiary_list):
-        selected_item = beneficiary_list.selection()[0]  # Get the selected item from Treeview
-        beneficiary_account_number = beneficiary_list.item(selected_item, "values")[1] 
+    def transfer_to_beneficiary(username, selected_full_name):
+        print("Transfer to beneficiary called")
+        print("Selected full name:", selected_full_name)
+        # Load beneficiaries using username
+        beneficiaries = load_beneficiaries(username)
+        print("Beneficiaries:", beneficiaries)
+        for beneficiary in beneficiaries:
+            if beneficiary["Full Name"] == selected_full_name:
+                account_number = beneficiary["Account Number"]
+                open_transfer_window(username, account_number,selected_full_name)
+                return 
+        return None  # Account not found
 
+    def open_transfer_window(username, account_number,selected_full_name):
         transfer_window = Toplevel(root)
         transfer_window.title("Transfer to Beneficiary")
         center_window(transfer_window, 400, 300)
 
-        ttk.Label(transfer_window, text=f"Full Name: {beneficiary_account_number}").pack(pady=5)  # Assuming account number is displayed
+        ttk.Label(transfer_window, text=f"Full Name: {selected_full_name}").pack(pady=5)  # Assuming account number is displayed
         ttk.Label(transfer_window, text="Account Number:").pack(pady=5)
-        account_number_label = ttk.Label(transfer_window, text=beneficiary_account_number)
+        account_number_label = ttk.Label(transfer_window, text=account_number)
         account_number_label.pack(pady=5)
 
         ttk.Label(transfer_window, text="Amount:").pack(pady=5)
@@ -201,7 +217,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
 
             if get_balance(username) >= amount:
                 # Call do_transfer with retrieved account number
-                if transfer_funds(username, beneficiary_account_number, amount, immediate_payment):
+                if transfer_funds(username, account_number, amount, immediate_payment):
                     update_balance(username, get_balance(username) - amount - (10 if immediate_payment else 1.5))  # Update balance based on transfer type
                     update_balance_display()
                     transfer_window.destroy()

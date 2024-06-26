@@ -14,3 +14,8 @@
 {"date": "2024-06-26", "username": "vuyo", "description": "Deposit", "amount": 100.0, "type": "deposit", "balance": 2131.0}
 {"date": "2024-06-26", "username": "vuyo", "description": "Transfer", "amount": 100.0, "type": "transfer", "balance": 2021.0}
 {"date": "2024-06-26", "username": "vuyo", "description": "Transfer", "amount": 100.0, "type": "transfer", "balance": 1911.0}
+{"date": "2024-06-26", "username": "vuyo", "description": "Transfer", "amount": 100.0, "type": "transfer", "balance": 1801.0}
+{"date": "2024-06-26", "username": "vuyo", "description": "Transfer", "amount": 100.0, "type": "transfer", "balance": 1691.0}
+{"date": "2024-06-26", "username": "vspani", "description": "Transfer Received", "amount": 100.0, "type": "transfer", "balance": 600.0}
+{"date": "2024-06-26", "username": "vuyo", "description": "Transfer", "amount": 100.0, "type": "transfer", "balance": 1581.0}
+{"date": "2024-06-26", "username": "vuyo", "description": "Transfer", "amount": 100.0, "type": "transfer", "balance": 1471.0}

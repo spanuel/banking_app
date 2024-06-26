@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import logging
 from banking_app.email_utils import send_email
-from banking_app.utils import get_account_number, get_user_email,get_user_transactions, log_transaction, log_error, update_balance, get_balance, generate_delay
+from banking_app.utils import get_account_number, get_user_email,get_user_transactions, get_username_from_cell_number, log_transaction, log_error, update_balance, get_balance, generate_delay
 
 TRANSACTION_LOG = "data/TransactionLog.txt"
 
@@ -53,8 +53,15 @@ def transfer_funds(username, recipient_identifier, amount, immediate=False):
             log_transaction(username, "Transfer", amount, new_sender_balance)
 
             # Log the transfer received by recipient (assuming the recipient exists)
-            update_balance(recipient_identifier, get_balance(recipient_identifier) + amount)
-            log_transaction(recipient_identifier, "Transfer Received", amount, get_balance(recipient_identifier))
+            recipient_username = get_account_number(recipient_identifier)
+            if recipient_username is None:
+                raise ValueError(f"Could not find username for recipient account number {recipient_identifier}")
+            recipient_balance = get_balance(recipient_username)
+            if recipient_balance is None:
+                raise ValueError(f"Could not retrieve balance for recipient {recipient_username}")
+            update_balance(recipient_username, recipient_balance + amount)
+            log_transaction(recipient_username, "Transfer Received", amount, recipient_balance + amount)
+
 
             return True  # Transfer successful
         else:

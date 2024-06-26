@@ -89,6 +89,7 @@ def load_beneficiaries(username):
             return [eval(line.strip()) for line in file.readlines()]
     except FileNotFoundError:
         with open(filename, "w") as file:  # Create the file if it does not exist
+            
             return []  # Return an empty list if the file is new
 
 #this method will be called to save the updated list back to the file
@@ -136,6 +137,15 @@ def account_exists(account_number):
             if user_details["Account Number"] == account_number:
                 return True
     return False
+
+#getting username
+def get_username_from_cell_number(cell_number):
+    with open(USERS_FILE, 'r') as file:
+        for line in file:
+            user_details = eval(line.strip())
+            if user_details["Phone Number"] == cell_number:
+                return user_details["Username"]
+    return None
 
 #getting user email
 def get_user_email(username):
