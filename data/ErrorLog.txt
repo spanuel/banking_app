@@ -1,4 +1,0 @@
-2024-06-17 20:42:22,N/A,(535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-3609d31433dsm1160910f8f.5 - gsmtp')
-2024-06-17 20:42:29,vspani,'Window' object is not callable
-2024-06-17 21:31:37,N/A,(534, b'5.7.9 Application-specific password required. For more information, go to\n5.7.9  https://support.google.com/mail/?p=InvalidSecondFactor ffacd0b85a97d-360750935ecsm12566510f8f.3 - gsmtp')
-2024-06-17 21:31:39,vspani,'Window' object is not callable

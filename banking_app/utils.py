@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import string
 import time
 import random
@@ -51,7 +52,10 @@ def log_transaction(username, description, amount, balance):
         "balance": balance
     }
     with open("data/TransactionLog.txt", 'a') as file:
-        file.write(json.dumps(transaction) + "\n")
+        if file.tell() == 0:
+            file.write(json.dumps(transaction) + "\n")
+        else:
+            file.write(json.dumps(transaction))
 
 #log all errors to file
 def log_error(username, error_message):
@@ -84,6 +88,8 @@ def create_beneficiary_file(username):
 #load the existing list of beneficiaries
 def load_beneficiaries(username):
     filename = f"data/beneficiaries/beneficiaries_{username}.txt"
+    if not os.path.exists(filename):
+        return [] 
     try:
         with open(filename, "r") as file:
             return [eval(line.strip()) for line in file.readlines()]
@@ -99,17 +105,14 @@ def save_beneficiaries(username, beneficiaries):
         with open(filename, "w") as file:
             for beneficiary in beneficiaries:
                 file.write(str(beneficiary) + "\n")
-        print(f"Beneficiaries saved to file: {beneficiaries}")
     except Exception as e:
-        print(f"An error occurred while saving beneficiaries: {e}")
+        log_error(username,f"An error occurred while saving beneficiaries: {e}")
 
 #new beneficiary is added to the list
 def add_beneficiary_to_username_list(username, full_name, account_number):
-    print(f"Attempting to add beneficiary {full_name} with account number {account_number} for user {username}")
     beneficiaries = load_beneficiaries(username)
     for beneficiary in beneficiaries:
         if beneficiary["Full Name"] == full_name and beneficiary["Account Number"] == account_number:
-            print(f"Beneficiary already exists for user {username}")
             return  # Beneficiary already exists
     beneficiary = {
         "Username": username,
@@ -118,7 +121,6 @@ def add_beneficiary_to_username_list(username, full_name, account_number):
     }
     beneficiaries.append(beneficiary)
     save_beneficiaries(username, beneficiaries)
-    print(f"Beneficiary {full_name} added successfully")
 
 #checking if user cell number exists
 def user_exists(cell_number):

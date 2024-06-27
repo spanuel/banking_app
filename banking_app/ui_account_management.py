@@ -158,8 +158,6 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
                     if not any(beneficiary["Full Name"] == full_name and beneficiary["Account Number"] == account_number for beneficiary in load_beneficiaries(username)):
                         # Add beneficiary to list
                         add_beneficiary_to_username_list(username, full_name, account_number)
-                        add_beneficiary_window.destroy()
-
                         # Update the Treeview widget
                         beneficiary_list.delete(*beneficiary_list.get_children())
                         updated_beneficiaries = load_beneficiaries(username)
@@ -167,6 +165,7 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
                             beneficiary_list.insert("", "end", values=(beneficiary["Full Name"],))
                         
                         messagebox.showinfo("Success", "Beneficiary added successfully")
+                        add_beneficiary_window.destroy()
                     else:
                         messagebox.showerror("Error", "Beneficiary already exists")
                 else:
