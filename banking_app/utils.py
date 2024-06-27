@@ -138,12 +138,21 @@ def account_exists(account_number):
                 return True
     return False
 
-#getting username
+#getting username by cellphone number
 def get_username_from_cell_number(cell_number):
     with open(USERS_FILE, 'r') as file:
         for line in file:
             user_details = eval(line.strip())
             if user_details["Phone Number"] == cell_number:
+                return user_details["Username"]
+    return None
+
+#getting username by account number
+def get_username_from_account_number(account_number):
+    with open(USERS_FILE, 'r') as file:
+        for line in file:
+            user_details = eval(line.strip())
+            if user_details["Account Number"] == account_number:
                 return user_details["Username"]
     return None
 

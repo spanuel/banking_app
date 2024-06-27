@@ -1,7 +1,8 @@
+from calendar import month_name
 from tkinter import BooleanVar, simpledialog, Toplevel, messagebox
 import ttkbootstrap as ttk
-from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement, get_balance, update_balance
-from banking_app.utils import account_exists, add_beneficiary_to_username_list, center_window,  get_account_number, load_beneficiaries, log_transaction, user_exists
+from banking_app.transaction_utils import deposit_funds, withdraw_funds, transfer_funds, generate_statement, get_balance
+from banking_app.utils import account_exists, add_beneficiary_to_username_list, center_window, load_beneficiaries, log_transaction, user_exists
 
 # Acoount management user interface
 def create_account_management_screen(root, username, navigate, create_signin_screen):
@@ -23,35 +24,35 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         balance = get_balance(username)  # Fetch balance from data file
         balance_label.config(text=f"Balance: R {balance}") 
 
-    # Define balance_label before calling update_balance_display
+    # define balance_label before calling update_balance_display
     balance = get_balance(username)  # Fetch initial balance
     balance_label = ttk.Label(frame, text=f"Balance: R {balance}", font=('Helvetica', 20, 'bold'))
     balance_label.pack(pady=10)
 
-    # Call update_balance_display to update the balance label
+    # call update_balance_display to update the balance label
     update_balance_display()
 
-    # Doing deposit transactions
+    # doing deposit transactions
     def handle_deposit():
         amount = simpledialog.askfloat("Deposit", "Enter amount to deposit:")
         if amount is not None:
             if deposit_funds(username, amount):
                 update_balance_display()
-                messagebox.showinfo("Success", "Deposit Successful")
+                messagebox.showinfo("Success", f" Deposit of R {amount} Successful")
             else:
                 messagebox.showerror("Error", "Deposit Failed")
 
-    # Doing withdrawal transactions
+    # doing withdrawal transactions
     def handle_withdraw():
         amount = simpledialog.askfloat("Withdrawal", "Enter amount to withdraw:")
         if amount is not None:
             if withdraw_funds(username, amount):
                 update_balance_display()
-                messagebox.showinfo("Success", "Withdrawal Successful")
+                messagebox.showinfo("Success", f"Withdrawal of R {amount}  Successful")
             else:
                 messagebox.showerror("Error", "Withdrawal Failed")
 
-    # Doing transfer transactions
+    # doing transfer transactions
     def handle_transfer():
         beneficiaries = load_beneficiaries(username)
         if not beneficiaries:
@@ -92,13 +93,12 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
             full_name = full_name_entry.get()
             cell_number = cell_number_entry.get()
             amount = float(amount_entry.get())
-            # Check if user exists
+            # check if user exists
             if user_exists(cell_number):
-                # Make quick pay transfer (immediate by default)
-                if transfer_funds(username, cell_number, amount, immediate=True):
+                # make quick pay transfer (immediate by default)
+                if transfer_funds(username, cell_number, amount, 0):
                     update_balance_display()
-                    messagebox.showinfo()
-                    messagebox.showinfo("Success", "Withdrawal Successful")
+                    messagebox.showinfo("Success", f" Payment of R {amount}  successful!")
                     transfer_window.destroy()
                 else:
                     messagebox.showerror("Error", "Transfer Failed")
@@ -121,10 +121,8 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         beneficiaries = load_beneficiaries(username)
         for beneficiary in beneficiaries:
             beneficiary_list.insert("", "end", values=(beneficiary["Full Name"],))
-            print(beneficiary_list.get_children())
 
         def select_beneficiary():
-            print("Select beneficiary called")
             selected_item = beneficiary_list.selection()[0]
             selected_full_name = beneficiary_list.item(selected_item, "values")[0]
             transfer_to_beneficiary(username, selected_full_name)
@@ -137,7 +135,6 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
 
 
     def add_beneficiary(transfer_window, username, beneficiary_list):
-        print("Transfer to beneficiary called")
         add_beneficiary_window = Toplevel(transfer_window)
         center_window(add_beneficiary_window, 350, 250)
         add_beneficiary_window.title("Add Beneficiary")
@@ -181,11 +178,8 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         add_button.pack(pady=10)
 
     def transfer_to_beneficiary(username, selected_full_name):
-        print("Transfer to beneficiary called")
-        print("Selected full name:", selected_full_name)
         # Load beneficiaries using username
         beneficiaries = load_beneficiaries(username)
-        print("Beneficiaries:", beneficiaries)
         for beneficiary in beneficiaries:
             if beneficiary["Full Name"] == selected_full_name:
                 account_number = beneficiary["Account Number"]
@@ -212,14 +206,15 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         immediate_payment_checkbox.pack(pady=5)
 
         def execute_transfer():
+            # Get the values from the UI fields
             amount = float(amount_entry.get())
-            immediate_payment = immediate_payment_var.get()
+            is_express = immediate_payment_var.get()
 
             if get_balance(username) >= amount:
                 # Call do_transfer with retrieved account number
-                if transfer_funds(username, account_number, amount, immediate_payment):
-                    update_balance(username, get_balance(username) - amount - (10 if immediate_payment else 1.5))  # Update balance based on transfer type
+                if transfer_funds(username, account_number, amount, 1, is_express):
                     update_balance_display()
+                    messagebox.showinfo("Success",f" Transfer of R {amount} successful!")
                     transfer_window.destroy()
                 else:
                     messagebox.showerror("Error", "Transfer Failed")  # Handle transfer failure from do_transfer
@@ -229,6 +224,25 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
         transfer_button = ttk.Button(transfer_window, text="Transfer", command=execute_transfer)
         transfer_button.pack(pady=10)
 
+    # Generate Statement section
+    generate_statement_frame = ttk.Frame(frame)
+    generate_statement_frame.pack(pady=10, fill='x')
+
+    def generate_statement_with_months():
+        months = simpledialog.askinteger("Generate Statement", "Enter number of months 1-3", parent=root, minvalue=1, maxvalue=3)
+        if months is None:
+            return  # user cancelled the dialog
+        elif months < 1:
+            messagebox.showerror("Invalid Input", "Number of months must be at least 1")
+        elif months > 3:
+            messagebox.showerror("Invalid Input", "Maximum number of months is 3")
+        else:
+            messagebox.showinfo("Generating Statement", "Please wait, Bank statement is being generated")
+            root.update_idletasks()  # update the GUI to show the message
+
+            generate_statement(username, months)
+
+            messagebox.showinfo("Statement Sent", "Your bank statement has been sent to your email!")
 
     deposit_button = ttk.Button(frame, text="Deposit", command=handle_deposit)
     deposit_button.pack(pady=5)
@@ -239,10 +253,10 @@ def create_account_management_screen(root, username, navigate, create_signin_scr
     transfer_button = ttk.Button(frame, text="Transfer", command=handle_transfer)
     transfer_button.pack(pady=5)
 
-    statement_button = ttk.Button(frame, text="Generate Statement", command=lambda: generate_statement(username))
+    statement_button = ttk.Button(frame, text="Generate Statement", command=generate_statement_with_months)
     statement_button.pack(pady=5)
 
-    logout_button = ttk.Button(frame, text="Logout", command=create_signin_screen)
+    logout_button = ttk.Button(frame, text="Logout", command=lambda: create_signin_screen(root, navigate))
     logout_button.pack(pady=5)
 
 
