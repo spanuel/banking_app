@@ -1,2 +1,0 @@
-{"date": "2024-06-27", "username": "thokoza", "description": "Deposit", "amount": 500.0, "type": "deposit", "balance": 5715.0}
-{"date": "2024-06-27", "username": "thokoza", "description": "Withdraw", "amount": 200.0, "type": "withdrawal", "balance": 5513.0}{"date": "2024-06-27", "username": "thokoza", "description": "Transfer", "amount": 500.0, "type": "transfer", "balance": 5013.0}{"date": "2024-06-27", "username": "vuyo", "description": "Transfer Received", "amount": 500.0, "type": "transfer", "balance": 500.0}
