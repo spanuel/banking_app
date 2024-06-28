@@ -6,6 +6,10 @@ from banking_app.utils import get_account_number, get_full_name, get_user_email,
 TRANSACTION_LOG = "data/TransactionLog.txt"
 
 def deposit_funds(username, amount):
+    if amount <= 0:
+        log_error(username, "Invalid amount for deposit")
+        return False
+
     try:
         balance = get_balance(username)
         new_amount = amount - 5  # Deduct the R5 charge
@@ -18,6 +22,10 @@ def deposit_funds(username, amount):
         return False
 
 def withdraw_funds(username, amount):
+    if amount <= 0:
+        log_error(username, "Invalid amount for withdrawal")
+        return False
+    
     try:
         balance = get_balance(username)
         if balance >= amount:
@@ -34,6 +42,10 @@ def withdraw_funds(username, amount):
         return False
 
 def transfer_funds(username, recipient_identifier, amount, tab_index, is_express=False):
+    if amount <= 0:
+        log_error(username, "Invalid amount for transfer")
+        return False
+    
     try:
         sender_balance = get_balance(username)
         if sender_balance is None:
