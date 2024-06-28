@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import logging
 from banking_app.email_utils import send_email
-from banking_app.utils import get_account_number, get_user_email,get_user_transactions, get_username_from_account_number, get_username_from_cell_number, log_transaction, log_error, update_balance, get_balance, generate_delay
+from banking_app.utils import get_account_number, get_full_name, get_user_email,get_user_transactions, get_username_from_account_number, get_username_from_cell_number, log_transaction, log_error, update_balance, get_balance, generate_delay
 
 TRANSACTION_LOG = "data/TransactionLog.txt"
 
@@ -79,7 +79,8 @@ def generate_statement(username, months):
     try:
         transactions = get_user_transactions(username, months)
         email = get_user_email(username)
-        account_number = get_account_number(username)
+        full_name = get_full_name(username)
+        account_number = get_account_number(full_name)
         statement_header = (
             f"Tech Junkies Bank\n\n"
             f"Bank Statement\n"
@@ -87,7 +88,7 @@ def generate_statement(username, months):
             f"To Date: {transactions[-1]['date']}\n"
             f"Print Date: {datetime.now().strftime('%Y-%m-%d')}\n\n"
             f"Personal Details\n"
-            f"{username}\n"
+            f"{full_name}\n"
             f"Account Number: {account_number}\n\n"
             f"{'Date':<26}{'Description':<30}{'Money In (R)':>20} {'Money Out (R)':>20} {'Balance (R)':>15}\n"
             f"{'-' * 80}\n"

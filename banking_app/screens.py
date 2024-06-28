@@ -3,7 +3,7 @@ import ttkbootstrap as ttk
 from ttkbootstrap import DateEntry
 from tkinter import BooleanVar, messagebox, simpledialog
 from ttkbootstrap.constants import *
-from banking_app.utils import center_window, update_balance, validate_id_number, generate_password, generate_account_number
+from banking_app.utils import center_window, generate_random_password, update_balance, validate_email, validate_id_number, generate_account_number, validate_phone_number
 from banking_app.email_utils import send_email
 from banking_app.auth import login_user
 from banking_app.ui_account_management import create_account_management_screen
@@ -51,7 +51,6 @@ def create_signin_screen(root, navigate):
             else:
                 messagebox.showerror("Login Failed", "Invalid username or password.")
         except Exception as e:
-            
             messagebox.showerror("Error", "An error occurred. Please try again.")
     
     signin_button = ttk.Button(frame, text="Sign In", style="TButton", command=on_signin)
@@ -59,7 +58,6 @@ def create_signin_screen(root, navigate):
     
     forgot_password_button = ttk.Button(frame, text="Forgot Password?", style="TButton")
     forgot_password_button.pack()
-
 
 # Registration user interface
 def create_registration_screen(root, navigate,create_signin_screen):
@@ -73,7 +71,7 @@ def create_registration_screen(root, navigate,create_signin_screen):
     frame.pack(expand=True,fill='both')
 
     details = [
-        "Full Name", "Date of Birth", "ID Number", "Email Address", "Phone Number", "Username", "Password", "Confirm Password"
+        "Full Name", "Date of Birth", "ID Number", "Email Address", "Phone Number", "Username", "Password"
     ]
 
     entries = {}
@@ -84,10 +82,20 @@ def create_registration_screen(root, navigate,create_signin_screen):
         else:
             entry = ttk.Entry(frame)
             entry.insert(0, f"Enter your {detail.lower()}")  # Adding placeholders
-            if detail == "Password" or detail == "Confirm Password":
-                entry.config(show="*")
+            if detail == "Password":
+                entry.config(show="*", state='readonly')
         entry.pack(pady=5)
         entries[detail] = entry
+
+    def generate_password():
+        password = generate_random_password()
+        entries["Password"].config(state='normal')
+        entries["Password"].delete(0, 'end')
+        entries["Password"].insert(0, password)
+        entries["Password"].config(state='readonly')
+
+    generate_password_button = ttk.Button(frame, text="Generate Password", command=generate_password)
+    generate_password_button.pack(pady=5)
 
     def handle_registration(root,user_details):
         registration_label = ttk.Label(root, text="Registering...", font=('Helvetica', 20, 'bold'))
@@ -104,24 +112,32 @@ def create_registration_screen(root, navigate,create_signin_screen):
 
             #Error handling and input validation
             try:
-                if not validate_id_number(user_details["ID Number"], user_details["Date of Birth"]):
-                    messagebox.showerror("Error", "ID number and date of birth do not match")
+                if not user_details["Full Name"]:
+                    messagebox.showerror("Error", "Full name is required")
                     return
-
+                
                 if int(user_details["Date of Birth"].split('/')[-1])> (datetime.datetime.now().year - 16):
                     messagebox.showerror("Error", "User must be at least 16 years old to register")
                     return
 
-                if user_details["Password"] != user_details["Confirm Password"]:
-                    messagebox.showerror("Error", "Passwords do not match")
+                if not validate_id_number(user_details["ID Number"], user_details["Date of Birth"]):
+                    messagebox.showerror("Error", "ID number and date of birth do not match")
+                    return
+                
+                if not user_details["Email Address"] or not validate_email(user_details["Email Address"]):
+                    messagebox.showerror("Error", "Invalid email address")
                     return
 
+                if not user_details["Phone Number"] or not validate_phone_number(user_details["Phone Number"]):
+                    messagebox.showerror("Error", "Invalid phone number")
+                    return
+
+                if not user_details["Username"]:
+                    messagebox.showerror("Error", "Username is required")
+                    return
+               
                 account_number = generate_account_number()
-                if len(user_details["Password"]) < 5:
-                    messagebox.showerror("Error", "Password must be at least 5 characters")
-                    return
-
-                password = user_details["Password"] if user_details["Password"] else generate_password()
+                password = user_details["Password"]
                 from banking_app.auth import save_user
                 save_user(user_details["Full Name"], user_details["Date of Birth"], user_details["ID Number"], user_details["Email Address"], user_details["Phone Number"], user_details["Username"], password, account_number)
 
@@ -168,6 +184,7 @@ def create_registration_screen(root, navigate,create_signin_screen):
         except Exception as e:
             registration_label.config(text="Error: " + str(e))
             root.update_idletasks()  # Update the GUI to show the error message
+
 
     register_button = ttk.Button(frame, text="Register", command=lambda: handle_registration(root, {}), style="TButton")
     register_button.pack(pady=10)
