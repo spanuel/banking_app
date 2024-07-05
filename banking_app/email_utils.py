@@ -4,8 +4,8 @@ from banking_app.utils import log_error
 
 def send_email(to_address, subject, body):
     try:
-        from_address = "v.spanuel3@gmail.com"
-        password = "prjj duhg irfn inls"
+        from_address = "your@example.com"
+        password = "your-app-password"
 
         msg = MIMEText(body)
         msg['Subject'] = subject
